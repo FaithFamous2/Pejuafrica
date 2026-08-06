@@ -158,6 +158,7 @@ export const api = {
     tenantId: string,
     body: {
       step: "basics" | "voice" | "audience" | "presence" | "init";
+      mode?: "auto" | "draft" | "rewrite";
       business_name?: string;
       industry?: string;
       brand_voice?: string;
@@ -169,6 +170,7 @@ export const api = {
   ) =>
     request<{
       step: string;
+      mode?: string;
       suggestions: Record<string, string>;
       helper_text: string;
       source: string;

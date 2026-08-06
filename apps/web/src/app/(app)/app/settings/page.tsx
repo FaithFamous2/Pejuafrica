@@ -1,10 +1,19 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/components/app-shell";
 import { PageHero } from "@/components/page-hero";
+import {
+  AudiencePicker,
+  CompetitorTags,
+  SocialAccountsFields,
+  parseSocialsMap,
+  parseTagList,
+} from "@/components/brand-profile-fields";
+import { useStudioModal } from "@/hooks/use-studio-modal";
 import { api } from "@/lib/api";
 
 type Plan = {
@@ -228,14 +237,21 @@ function BusinessProfileDrawer({
   const [audience, setAudience] = useState(profile?.target_audience || "");
   const [goals, setGoals] = useState(profile?.goals || "");
   const [competitors, setCompetitors] = useState((profile?.competitors || []).join(", "));
-  const [instagram, setInstagram] = useState(profile?.socials?.instagram || "");
-  const [whatsapp, setWhatsapp] = useState(profile?.socials?.whatsapp || "");
-  const [facebook, setFacebook] = useState(profile?.socials?.facebook || "");
+  const [socials, setSocials] = useState<Record<string, string>>(
+    parseSocialsMap(profile?.socials || null),
+  );
   const [logoUrl, setLogoUrl] = useState(profile?.logo_url || null);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useStudioModal(true);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   async function onUpload(file: File | null) {
     if (!file) return;
@@ -263,15 +279,8 @@ function BusinessProfileDrawer({
         brand_voice: brandVoice.trim() || null,
         target_audience: audience.trim() || null,
         goals: goals.trim() || null,
-        competitors: competitors
-          .split(",")
-          .map((c) => c.trim())
-          .filter(Boolean),
-        socials: {
-          ...(instagram.trim() ? { instagram: instagram.trim() } : {}),
-          ...(whatsapp.trim() ? { whatsapp: whatsapp.trim() } : {}),
-          ...(facebook.trim() ? { facebook: facebook.trim() } : {}),
-        },
+        competitors: parseTagList(competitors),
+        socials: Object.keys(socials).length ? socials : null,
         logo_url: logoUrl,
         initialize_memory: true,
       });
@@ -283,9 +292,11 @@ function BusinessProfileDrawer({
     }
   }
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <motion.div
-      className="fixed inset-0 z-50 flex justify-end"
+      className="fixed inset-0 z-[200] flex justify-end"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -301,9 +312,9 @@ function BusinessProfileDrawer({
         animate={{ x: 0 }}
         exit={{ x: 480 }}
         transition={{ type: "spring", stiffness: 320, damping: 32 }}
-        className="relative z-10 flex h-full w-full max-w-lg flex-col overflow-y-auto border-l border-line bg-surface shadow-2xl"
+        className="relative z-10 flex h-[100dvh] w-full max-w-lg flex-col overflow-hidden border-l border-line bg-surface shadow-2xl"
       >
-        <div className="border-b border-line bg-gradient-to-br from-brand-deep to-brand px-6 py-5 text-white">
+        <div className="shrink-0 border-b border-line bg-gradient-to-br from-brand-deep to-brand px-6 py-5 text-white">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
@@ -324,8 +335,8 @@ function BusinessProfileDrawer({
           </div>
         </div>
 
-        <form onSubmit={onSubmit} className="flex flex-1 flex-col">
-          <div className="space-y-4 px-6 py-5">
+        <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-6 py-5 pb-8">
             <div className="flex items-center gap-4 rounded-2xl border border-line bg-surface-soft/40 p-4">
               <LogoAvatar name={businessName || "Brand"} logoUrl={logoUrl} size="lg" />
               <div className="min-w-0 flex-1">
@@ -354,40 +365,31 @@ function BusinessProfileDrawer({
               onChange={setBrandVoice}
               placeholder="Warm, clear, confident…"
             />
-            <Area
-              label="Target audience"
-              value={audience}
-              onChange={setAudience}
-              placeholder="Who you sell to…"
-            />
+            <AudiencePicker value={audience} onChange={setAudience} compact />
             <Area label="Goals" value={goals} onChange={setGoals} placeholder="What growth looks like…" />
-            <Field
-              label="Competitors (comma-separated)"
-              value={competitors}
-              onChange={setCompetitors}
-            />
-            <div className="grid gap-3 sm:grid-cols-3">
-              <Field label="Instagram" value={instagram} onChange={setInstagram} placeholder="@brand" />
-              <Field label="WhatsApp" value={whatsapp} onChange={setWhatsapp} placeholder="+234…" />
-              <Field label="Facebook" value={facebook} onChange={setFacebook} />
-            </div>
+            <CompetitorTags value={competitors} onChange={setCompetitors} compact />
+            <SocialAccountsFields value={socials} onChange={setSocials} compact />
 
             {toast && <p className="text-sm font-medium text-brand">{toast}</p>}
             {error && <p className="text-sm text-danger">{error}</p>}
           </div>
 
-          <div className="mt-auto border-t border-line bg-surface-soft/30 px-6 py-4">
+          <div
+            className="shrink-0 border-t border-line bg-surface px-6 pt-4 shadow-[0_-8px_24px_rgba(8,53,38,0.06)]"
+            style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
+          >
             <button
               type="submit"
               disabled={busy || uploading || businessName.trim().length < 2}
-              className="w-full rounded-full bg-brand-deep py-3 text-sm font-semibold text-white disabled:opacity-50"
+              className="w-full rounded-full bg-brand-deep py-3.5 text-sm font-semibold text-white disabled:opacity-50"
             >
               {busy ? "Saving…" : "Save business profile"}
             </button>
           </div>
         </form>
       </motion.aside>
-    </motion.div>
+    </motion.div>,
+    document.body,
   );
 }
 

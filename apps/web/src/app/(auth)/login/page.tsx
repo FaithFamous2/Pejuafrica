@@ -27,9 +27,24 @@ export default function LoginPage() {
       }
       if (result.user.is_platform_admin && !result.tenant) {
         router.push("/admin");
-      } else {
-        router.push("/app");
+        return;
       }
+
+      const tid = result.tenant?.id || localStorage.getItem("peju_tenant_id");
+      if (tid) {
+        try {
+          const profile = await api.getBusinessProfile(tid);
+          if (!profile.memory_initialized) {
+            router.push("/app/onboarding");
+            return;
+          }
+        } catch {
+          // New workspace / no profile yet → collect details
+          router.push("/app/onboarding");
+          return;
+        }
+      }
+      router.push("/app");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {

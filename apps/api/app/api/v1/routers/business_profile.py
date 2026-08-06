@@ -28,6 +28,7 @@ MAX_LOGO_BYTES = 2 * 1024 * 1024
 
 class OnboardingAssistRequest(BaseModel):
     step: str = Field(pattern="^(basics|voice|audience|presence|init)$")
+    mode: str = Field(default="auto", pattern="^(auto|draft|rewrite)$")
     business_name: str | None = None
     industry: str | None = None
     brand_voice: str | None = None
@@ -91,9 +92,6 @@ async def upsert_profile(payload: BusinessProfileUpsert, auth: CurrentAuth, db: 
     profile.goals = payload.goals
     if payload.logo_url is not None:
         profile.logo_url = payload.logo_url or None
-    profile.onboarding_completed = bool(
-        payload.brand_voice and payload.target_audience and payload.industry
-    )
 
     # Keep tenant display name/industry in sync for admin + shell
     tenant_row = await db.scalar(select(Tenant).where(Tenant.id == tenant.id))
@@ -103,7 +101,9 @@ async def upsert_profile(payload: BusinessProfileUpsert, auth: CurrentAuth, db: 
             tenant_row.industry = payload.industry
 
     if payload.initialize_memory:
+        # Finishing the onboarding wizard always completes setup
         profile.memory_initialized = True
+        profile.onboarding_completed = True
         try:
             get_turso().insert_activity(
                 event_id=str(uuid.uuid4()),
@@ -116,6 +116,10 @@ async def upsert_profile(payload: BusinessProfileUpsert, auth: CurrentAuth, db: 
             )
         except Exception:
             pass
+    else:
+        profile.onboarding_completed = bool(
+            payload.brand_voice and payload.target_audience and payload.industry
+        )
 
     await db.flush()
     await db.refresh(profile)
@@ -152,6 +156,7 @@ async def assist_step(payload: OnboardingAssistRequest, auth: CurrentAuth, db: D
             "goals": payload.goals,
         },
         db=db,
+        mode=payload.mode,
     )
     usage = result.get("usage")
     if usage:
@@ -168,6 +173,7 @@ async def assist_step(payload: OnboardingAssistRequest, auth: CurrentAuth, db: D
                 metadata_json={
                     "action": "onboarding_assist",
                     "step": payload.step,
+                    "mode": payload.mode,
                     "response_excerpt": str(result.get("helper_text") or "")[:800],
                 },
             )
@@ -175,9 +181,10 @@ async def assist_step(payload: OnboardingAssistRequest, auth: CurrentAuth, db: D
         await db.flush()
     return {
         "step": payload.step,
+        "mode": result.get("mode") or payload.mode,
         "suggestions": result.get("suggestions") or {},
-        "helper_text": result.get("helper_text"),
-        "source": result.get("source"),
+        "helper_text": result.get("helper_text") or "",
+        "source": result.get("source") or "template",
     }
 
 

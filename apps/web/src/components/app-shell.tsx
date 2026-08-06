@@ -126,7 +126,8 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   const tenantName =
     me?.active_tenant?.name || me?.memberships[0]?.tenant.name || "Workspace";
 
-  const needsOnboarding = !profile?.onboarding_completed || !profile?.memory_initialized;
+  // Memory init is the real "finished onboarding" flag (set only on final step)
+  const needsOnboarding = !profile || !profile.memory_initialized;
 
   const value = useMemo(
     () => ({
@@ -147,11 +148,20 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { me, tenantName, loading, logout, needsOnboarding, tenantId, profile } = useApp();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [trialDays, setTrialDays] = useState<number | null>(null);
 
   const isOnboarding = pathname?.startsWith("/app/onboarding");
+
+  // Incomplete onboarding → always resume setup (any browser / return visit)
+  useEffect(() => {
+    if (loading || !me) return;
+    if (needsOnboarding && !isOnboarding) {
+      router.replace("/app/onboarding");
+    }
+  }, [loading, me, needsOnboarding, isOnboarding, router]);
 
   useEffect(() => {
     if (!tenantId || isOnboarding) return;
@@ -192,6 +202,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
           />
         </div>
+      </div>
+    );
+  }
+
+  // While redirecting incomplete users, keep the studio spinner (avoid flashing app chrome)
+  if (needsOnboarding && !isOnboarding) {
+    return (
+      <div className="studio-shell flex min-h-screen items-center justify-center">
+        <p className="text-sm text-white/70">Taking you to finish setup…</p>
       </div>
     );
   }
