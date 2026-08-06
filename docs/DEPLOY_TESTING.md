@@ -77,7 +77,7 @@ BOOTSTRAP_SUPERADMIN_PASSWORD=<strong>
 ## 4. Vercel (Next.js)
 
 1. [vercel.com](https://vercel.com) → Import repo.
-2. **Root Directory:** `apps/web`
+2. **Root Directory:** `apps/web` ← required (repo root has no Next.js app; wrong root = Ready + 404)
 3. Framework: Next.js (auto).
 4. Environment variables:
 
@@ -88,6 +88,13 @@ BOOTSTRAP_SUPERADMIN_PASSWORD=<strong>
 
 5. Deploy.
 6. Copy the Vercel URL → update Render `FRONTEND_URL` + `CORS_ORIGINS` → redeploy API (or save env and restart).
+
+### If the site shows Vercel `404: NOT_FOUND` while deploy is Ready
+
+1. Project → **Settings → General → Root Directory** → set to **`apps/web`** → Save.
+2. **Deployments → … → Redeploy** (clear build cache if available).
+3. Build log should show `Next.js 16` and routes like `/`, `/login`, `/app`.
+4. If Root Directory was empty/wrong, that is why you got a green deploy with no pages.
 
 ---
 
