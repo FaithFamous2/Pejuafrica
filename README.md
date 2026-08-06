@@ -45,6 +45,18 @@ npm run dev
 - API docs: http://localhost:8000/docs  
 - Super admin (bootstrap): `admin@pejuafrica.com` / `ChangeMeNow!123`
 
+## Free testing deploy (this week)
+
+Neon → Upstash → Render (API) → Vercel (web). Step-by-step:
+
+→ **[docs/DEPLOY_TESTING.md](docs/DEPLOY_TESTING.md)**
+
+Quick reminder:
+
+1. Neon Postgres + Upstash Redis URLs  
+2. Render Docker service from `apps/api/Dockerfile`  
+3. Vercel project root = `apps/web`, set `PEJU_API_ORIGIN` to the Render URL, leave `NEXT_PUBLIC_API_URL` empty  
+
 ## Current status
 
 **Through Phase 5 (private alpha hardening):**

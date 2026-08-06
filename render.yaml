@@ -1,0 +1,42 @@
+# Render Blueprint — PejuAfrica API (testing)
+# Connect this repo in Render → New → Blueprint, or create a Web Service manually
+# pointing at apps/api/Dockerfile.
+services:
+  - type: web
+    name: pejuafrica-api
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: ./apps/api
+    healthCheckPath: /health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: SQL_ECHO
+        value: "false"
+      - key: COOKIE_SECURE
+        value: "true"
+      # Leave empty so auth cookies bind to the Vercel host via Next.js rewrites
+      - key: COOKIE_DOMAIN
+        value: ""
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_URL_SYNC
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: BOOTSTRAP_SUPERADMIN_EMAIL
+        value: admin@pejuafrica.com
+      - key: BOOTSTRAP_SUPERADMIN_PASSWORD
+        sync: false
+      - key: BOOTSTRAP_SUPERADMIN_NAME
+        value: Peju Super Admin

@@ -17,7 +17,8 @@ async function request<T>(
     headers.set("X-Tenant-Id", tenantId);
   }
 
-  // Prefer same-origin proxy (rewrites to FastAPI) so httpOnly cookies stay reliable.
+  // Prefer same-origin `/api` (empty NEXT_PUBLIC_API_URL) so Next.js rewrites
+  // to FastAPI and httpOnly cookies stay on the web host (Vercel / localhost).
   const base = API_URL || "";
   const res = await fetch(`${base}${path}`, {
     ...options,

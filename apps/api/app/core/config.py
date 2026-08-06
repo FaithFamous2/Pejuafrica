@@ -25,7 +25,8 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 30
     cookie_secure: bool = False
-    cookie_domain: str = "localhost"
+    # Empty = host-only cookie (required when Vercel rewrites to Render)
+    cookie_domain: str = ""
     cors_origins: List[str] = ["http://localhost:3000"]
 
     database_url: str
