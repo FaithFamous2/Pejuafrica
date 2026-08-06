@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { AuthFrame } from "@/components/auth-frame";
 
-export default function VerifyEmailPage() {
+function VerifyEmailInner() {
   const params = useSearchParams();
   const token = params.get("token") || "";
   const [message, setMessage] = useState("Verifying…");
@@ -40,5 +40,23 @@ export default function VerifyEmailPage() {
     >
       <p className={`text-sm ${ok ? "text-brand" : "text-muted"}`}>{message}</p>
     </AuthFrame>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense
+      fallback={
+        <AuthFrame
+          title="Verify email"
+          subtitle="Confirming your PejuAfrica account."
+          footer={null}
+        >
+          <p className="text-sm text-muted">Verifying…</p>
+        </AuthFrame>
+      }
+    >
+      <VerifyEmailInner />
+    </Suspense>
   );
 }

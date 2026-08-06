@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { AuthFrame } from "@/components/auth-frame";
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const router = useRouter();
   const params = useSearchParams();
   const initialEmail = useMemo(() => params.get("email") || "", [params]);
@@ -111,5 +111,19 @@ export default function ResetPasswordPage() {
         </button>
       </form>
     </AuthFrame>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <AuthFrame title="Set new password" subtitle="Loading…" footer={null}>
+          <p className="text-sm text-muted">Loading…</p>
+        </AuthFrame>
+      }
+    >
+      <ResetPasswordForm />
+    </Suspense>
   );
 }
