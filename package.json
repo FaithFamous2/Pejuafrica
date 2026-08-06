@@ -1,0 +1,10 @@
+{
+  "name": "pejuafrica",
+  "private": true,
+  "scripts": {
+    "dev:web": "npm --prefix apps/web run dev",
+    "dev:api": "apps/api/.venv/bin/uvicorn app.main:app --reload --app-dir apps/api --port 8000",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down"
+  }
+}
